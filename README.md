@@ -1,5 +1,10 @@
 # VagonLab Showcase
 
+> **English summary.** VagonLab is a control panel for a railway-wagon processing line, built with Blazor Server, ASP.NET Core and EF Core. It talks to PLCs over Modbus, shows RTSP camera feeds, recognises wagon numbers with a hybrid OCR pipeline (EasyOCR + PaddleOCR), prints labels and syncs with an external MySQL database. Access is role-based (Developer / Administrator / Technician). I designed and built it end to end.
+>
+> This repository is a **sanitized showcase**: architecture, data flow, key decisions and configuration examples with placeholders. Production code, customer data and infrastructure details are intentionally not included (see [docs/REDACTION.md](docs/REDACTION.md)). Walkthrough on a call: ledachkov.ilya@gmail.com
+
+
 ## TL;DR
 
 - **Панель управления вагонным участком**: SCADA-система для управления производственным процессом обработки вагонов с интеграцией Modbus/PLC, камерами RTSP, гибридным OCR пайплайном (EasyOCR + PaddleOCR) и печатью ярлыков.
@@ -11,7 +16,7 @@
 1. **[`docs/DIAGRAMS.md`](docs/DIAGRAMS.md)** — визуализация компонентов, поток данных, последовательность событий (Mermaid-диаграммы).
 2. **[`docs/KEY_DECISIONS.md`](docs/KEY_DECISIONS.md)** — 5–7 ключевых технических решений и компромиссов.
 3. **[`backend/WHERE_TO_LOOK.md`](backend/WHERE_TO_LOOK.md)** и **[`frontend/WHERE_TO_LOOK.md`](frontend/WHERE_TO_LOOK.md)** — быстрые точки входа в код с пояснениями.
-4. **[`DEMO_INSTRUCTIONS.md`](DEMO_INSTRUCTIONS.md)** — инструкции для демонстрации на собеседовании.
+4. **[`DEMO_INSTRUCTIONS.md`](DEMO_INSTRUCTIONS.md)** — пошаговая демонстрация за 5 минут.
 
 ## Состав витрины
 
