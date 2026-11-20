@@ -1,6 +1,5 @@
-# ADR 0001: Использовать Blazor Server
-- **Контекст**: нужен быстрый UI с real-time обновлением состояния PLC/Modbus без тяжёлого SPA.
-- **Решение**: Blazor Server + SignalR.
-- **Альтернативы**: React/SPA + WebAPI + WebSocket (больше фронтенд-инфры), Blazor WebAssembly (больше загрузка).
-- **Последствия**: зависимость от стабильного соединения, но меньше бандл и быстрее time-to-demo.
-
+# ADR 0001: Use Blazor Server
+- **Context**: a fast UI with real-time PLC/Modbus state updates, without a heavy SPA.
+- **Decision**: Blazor Server + SignalR.
+- **Alternatives**: React SPA + Web API + WebSocket (more front-end infrastructure), Blazor WebAssembly (larger download).
+- **Consequences**: depends on a stable connection, but a smaller bundle and a faster time-to-demo.
