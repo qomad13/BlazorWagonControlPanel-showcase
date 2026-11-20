@@ -1,9 +1,8 @@
-# Мультиарендность
+# Multi-tenancy
 
-В текущей версии не используется. Демонстрация однодоменная: один контур, одна БД, один набор ролей.
+Not used in the current version. The system is single-tenant: one site, one database, one set of roles.
 
-Если потребуется мультиарендность:
-- Роутинг по поддоменам или заголовку `X-Tenant-Id`.
-- Отдельные схемы/БД на арендатора (SQLite/MySQL), маппинг через `ITenantProvider`.
-- Изоляция кэшей и настроек Modbus/PLC по арендаторам.
-
+If multi-tenancy were needed:
+- Routing by sub-domain or an `X-Tenant-Id` header.
+- A separate schema or database per tenant (SQLite/MySQL), mapped through an `ITenantProvider`.
+- Isolation of caches and Modbus/PLC settings per tenant.
