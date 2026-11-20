@@ -1,54 +1,43 @@
-# Политика редактирования (showcase)
+# Redaction policy (showcase)
 
-## Что было удалено/заменено
+## What was removed or replaced
 
-### Чувствительные данные
-- **Пароли**: все реальные пароли заменены на плейсхолдеры `CHANGE_ME`
-  - MySQL пароли в `appsettings.json` и дефолтных значениях
-  - RTSP пароли в placeholder'ах UI
-- **Токены и ключи**: JWT секретные ключи заменены на плейсхолдеры
-- **IP адреса**: реальные IP адреса заменены на `127.0.0.1` или `CHANGE_ME_IP`
-  - PLC IP адреса
-  - Принтер IP адреса
-  - Камеры RTSP URL
-- **Домены**: реальные домены не включены в документацию
-- **Пути к прод-инфре**: пути к продакшн серверам не документируются
+### Sensitive data
+- **Passwords**: all real passwords are replaced with the placeholder `CHANGE_ME` (database passwords in configuration and defaults, RTSP passwords in UI placeholders).
+- **Tokens and keys**: JWT secret keys are replaced with placeholders.
+- **IP addresses**: real addresses are replaced with `127.0.0.1` or `CHANGE_ME_IP` (PLC, printer, camera RTSP URLs).
+- **Domains**: real domains are not included in the documentation.
+- **Server paths**: paths on production servers are not documented.
 
-### Конфигурация
-- **appsettings.json**: содержит демо-значения с плейсхолдерами
-- **appsettings.example.json**: создан пример с плейсхолдерами `CHANGE_ME`
-- **docker-compose.example.yml**: демо-конфигурация с паролями `CHANGE_ME`
-- **ENV примеры**: `backend/ENV_EXAMPLE.md` содержит только плейсхолдеры
+### Configuration
+- **appsettings.example.json**: an example with `CHANGE_ME` placeholders and illustrative Modbus register numbers.
+- **docker-compose.example.yml**: a demo configuration with `CHANGE_ME` passwords.
+- **ENV examples**: `backend/ENV_EXAMPLE.md` contains placeholders only.
 
-### Данные
-- **Данные клиентов**: не включены в seed или примеры
-- **Реальные операции**: логи операций не содержат реальных данных клиентов
-- **Seed данные**: полностью синтетические (`sql/seed_demo.sql`)
+### Data
+- **Customer data**: not included in the seed or examples.
+- **Operation logs**: no real customer data.
+- **Seed**: fully synthetic (`sql/seed_demo.sql`).
 
-### Инфраструктура
-- **Прод-топологии**: не документируются
-- **Фаерволы**: правила фаерволов не включены
-- **VPN**: конфигурация VPN не документируется
-- **Сетевые ACL**: правила доступа не документируются
-- **Мониторинг и алерты**: прод-конфигурации мониторинга не включены
+### Infrastructure
+- Production topologies, firewall rules, VPN configuration, network ACLs and monitoring/alert configuration are not documented.
 
-## Что оставлено (нейтральные примеры)
+## What was kept (neutral examples)
 
-- **Локальные адреса**: `127.0.0.1` для демо-конфигурации
-- **Демо RTSP placeholders**: примеры вида `rtsp://demo:demo@localhost:554/stream`
-- **Порты**: стандартные порты (502 для Modbus, 3306/3307 для MySQL, 9100 для принтера)
-- **Структура БД**: схемы таблиц без реальных данных
-- **Примеры кода**: нейтральные примеры использования API
+- **Local addresses**: `127.0.0.1` in demo configuration.
+- **Demo RTSP placeholders**: values like `rtsp://demo:demo@localhost:554/stream`.
+- **Standard ports**: 502 (Modbus), 3306/3307 (MySQL), 9100 (printer).
+- **Database structure**: table schemas without real data.
 
-## Файлы, исключённые из showcase
+## Files excluded from the showcase
 
-1. `appsettings.json` — содержит только демо-значения с плейсхолдерами
-2. `appsettings.*.local.json` — исключены через `.gitignore`
-3. `.env*` — исключены через `.gitignore`
-4. `bin/`, `obj/` — скомпилированные файлы (исключены)
-5. `*.db`, `*.sqlite` — файлы БД (исключены)
-6. `state.bin`, `dump.bin` — временные файлы (исключены)
+1. All application source code.
+2. `appsettings.json` and `appsettings.*.local.json`.
+3. `.env*` files.
+4. Build output (`bin/`, `obj/`).
+5. Database files (`*.db`, `*.sqlite`).
+6. Temporary state and dump files.
 
-## Проверка перед публикацией
+## Pre-publication check
 
-Перед каждой публикацией витрина проверяется вручную: поиск паролей, токенов и ключей, поиск реальных IP-адресов (допустимы только `127.0.0.1` и `localhost`), просмотр истории коммитов на предмет секретов. Автоматических проверок в CI в этом репозитории нет.
+Before each publication the showcase is checked manually: a search for passwords, tokens and keys, a search for real IP addresses (only `127.0.0.1` and `localhost` are allowed), and a review of the commit history for secrets. There are no automated checks in CI in this repository.
