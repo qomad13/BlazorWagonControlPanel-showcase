@@ -1,59 +1,60 @@
-# ADR 0004: Гибридный OCR пайплайн для распознавания номеров вагонов
+# ADR 0004: Hybrid OCR pipeline for wagon number recognition
 
-## Статус
-Принято (в продакшене), заменено заглушкой в showcase
+## Status
+Accepted (implemented in the full system); replaced with a stub in this showcase.
 
-## Контекст
-Требовалось автоматическое распознавание номеров вагонов с камер RTSP в реальном времени. Вагоны могут быть загрязнены, повреждены, номера могут быть частично скрыты. Требовалось обрабатывать full HD изображения (1920x1080) с приемлемой скоростью (~1 секунда на кадр).
+## Context
+Wagon numbers had to be recognised automatically from RTSP cameras in near real time. Wagons can be dirty or damaged and the numbers partly hidden. Full HD frames (1920x1080) had to be processed at an acceptable speed (about 1 second per frame).
 
-## Решение
-Реализован гибридный пайплайн из двух OCR движков:
-- **EasyOCR** — для быстрой детекции областей с номерами на full HD изображении
-- **PaddleOCR** — для точного распознавания цифр по найденным областям
+## Decision
+A hybrid pipeline of two OCR engines:
+- **EasyOCR** to quickly detect the regions that hold numbers on a Full HD image
+- **PaddleOCR** to accurately read the digits in the detected regions
 
-### Архитектура пайплайна
-1. Получение full HD снимка с RTSP камеры через OpenCvSharp
-2. EasyOCR анализирует полное изображение и находит bounding boxes областей с потенциальными номерами
-3. Изображения областей (crops) передаются в PaddleOCR
-4. PaddleOCR распознаёт цифры в каждой области
-5. Результаты валидируются (формат номера, длина) и возвращаются
+### Pipeline
+1. Take a Full HD snapshot from the RTSP camera through OpenCvSharp
+2. EasyOCR analyses the whole image and finds bounding boxes of potential numbers
+3. The region crops go to PaddleOCR
+4. PaddleOCR reads the digits in each region
+5. Results are validated (number format, length) and returned
 
-### Почему гибридный подход
-- **EasyOCR**: быстро обрабатывает full HD, хорошо определяет области, но хуже распознаёт цифры на битых вагонах
-- **PaddleOCR**: отлично распознаёт цифры даже на повреждённых поверхностях, но медленно обрабатывает полные full HD изображения
-- **Комбинация**: EasyOCR как "наводчик" находит области, PaddleOCR быстро распознаёт только эти области
+### Why a hybrid
+- **EasyOCR**: fast on Full HD and good at finding regions, but weaker at reading digits on damaged wagons
+- **PaddleOCR**: reads digits well even on damaged surfaces, but slow on whole Full HD frames
+- **Together**: EasyOCR acts as the "spotter" and PaddleOCR reads only those regions
 
-## Последствия
+## Consequences
 
-### Положительные
-- Высокая точность распознавания даже на битых/загрязнённых вагонах
-- Приемлемая скорость обработки (~1 секунда на кадр full HD)
-- Гибкость: можно настраивать пороги детекции и распознавания
+Timings below are the author's own measurements, not a formal benchmark.
 
-### Отрицательные
-- Две зависимости (EasyOCR и PaddleOCR)
-- Больше потребление памяти (два движка в памяти)
-- Сложнее отладка (два этапа обработки)
-- В showcase заменён на заглушку для упрощения демонстрации
+### Positive
+- Good accuracy even on damaged or dirty wagons
+- Acceptable speed (about 1 second per Full HD frame)
+- Flexible: detection and recognition thresholds can be tuned
 
-## Альтернативы
+### Negative
+- Two dependencies (EasyOCR and PaddleOCR)
+- More memory (two engines loaded)
+- Harder debugging (two processing stages)
+- Replaced with a stub in this showcase to keep the demo simple
 
-### Только EasyOCR
-- ✅ Быстрее
-- ❌ Хуже точность на битых вагонах
-- ❌ Частые ошибки распознавания
+## Alternatives
 
-### Только PaddleOCR
-- ✅ Лучше точность
-- ❌ Медленнее на full HD (3-5 секунд)
-- ❌ Не укладывается в требования по времени
+### EasyOCR only
+- Faster
+- Less accurate on damaged wagons
+- Frequent recognition errors
 
-### Коммерческие OCR решения
-- ✅ Высокая точность и скорость
-- ❌ Высокая стоимость
-- ❌ Зависимость от вендора
-- ❌ Может требовать облачную инфраструктуру
+### PaddleOCR only
+- Better accuracy
+- Slower on Full HD (3-5 seconds)
+- Misses the time requirement
 
-## Реализация
-Модуль был реализован отдельно и интегрирован через интерфейс `ICameraRecognitionService`. В текущем showcase заменён на `CameraStubService`, выдающий "0000000" для демонстрации архитектуры без зависимостей от OCR библиотек.
+### Commercial OCR products
+- High accuracy and speed
+- High cost
+- Vendor dependency
+- May require cloud infrastructure
 
+## Implementation
+The module was built separately and integrated through the `ICameraRecognitionService` interface. This showcase uses `CameraStubService`, which returns "0000000", to illustrate the architecture without OCR library dependencies.
