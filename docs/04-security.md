@@ -1,71 +1,56 @@
-# Безопасность (демо)
+# Security
 
-## Аутентификация
+This page describes how the application handles security and, just as important, which parts are demo-level defaults that need hardening for a real deployment.
 
-- **JWT Bearer токены**: используются для аутентификации API запросов
-  - Токен генерируется в `JwtTokenService` при успешном логине
-  - Секретный ключ хранится в конфигурации (в прод — в переменных окружения)
-  - Токен можно брать из cookie `AuthToken` для удобства работы с Blazor (при перезагрузке страницы)
-  - Валидация токена настроена в `Program.cs` через `JwtBearerOptions`
-- **Хранение паролей**: BCrypt хеширование в `Users.Password`
-  - Пароли никогда не хранятся в открытом виде
-  - Используется библиотека `BCrypt.Net-Next`
-  - Seed данные содержат только синтетические хеши
+## Authentication
 
-## Авторизация
+- **JWT Bearer tokens** authenticate API requests.
+  - The token is generated in `JwtTokenService` after a successful login.
+  - The secret key comes from configuration (environment variables in a real deployment).
+  - The token can also be read from the `AuthToken` cookie, which keeps Blazor working across page reloads.
+  - Validation is configured in `Program.cs` through `JwtBearerOptions`.
+- **Password storage**: BCrypt hashes in `Users.Password` (library `BCrypt.Net-Next`). Passwords are never stored in clear text. The seed contains synthetic hashes only.
 
-- **Роли**: система поддерживает три роли:
-  - `Developer` — полный доступ ко всем функциям
-  - `Administrator` — административные функции
-  - `Technician` — операторские функции
-- **Политики авторизации** (настроены в `Program.cs`):
-  - `DeveloperPolicy` — только для разработчиков
-  - `AdministratorPolicy` — только для администраторов
-  - `TechnicianPolicy` — только для техников
-  - `AdminsAndDevelopers` — для администраторов и разработчиков (чувствительные операции)
-- **Применение**: контроллеры используют атрибуты `[Authorize(Policy = "...")]` для защиты эндпоинтов
+## Authorisation
 
-## Валидация данных
+- **Roles**: `Developer` (full access), `Administrator` (administrative functions), `Technician` (operator functions).
+- **Policies** (configured in `Program.cs`): `DeveloperPolicy`, `AdministratorPolicy`, `TechnicianPolicy`, and `AdminsAndDevelopers` for sensitive operations.
+- **Usage**: controllers protect endpoints with `[Authorize(Policy = "...")]`.
 
-- **DataAnnotations**: модели данных используют атрибуты валидации (`[Required]`, `[MaxLength]`, и т.д.)
-- **Локализация ошибок**: кастомный `CustomLocalizedDataAnnotationsValidator` для отображения ошибок на украинском/английском
-- **Валидация на клиенте**: Blazor выполняет валидацию на стороне клиента перед отправкой запроса
+## Input validation
 
-## Transport Security
+- **DataAnnotations** on the models (`[Required]`, `[MaxLength]`, and so on).
+- **Localised errors**: a custom `CustomLocalizedDataAnnotationsValidator` shows validation messages in Ukrainian or English.
 
-- **Демо**: используется HTTP для простоты запуска
-- **Прод**: используется HTTPS с валидными сертификатами
-- **MTLS**: для интеграций с внешними системами можно использовать mutual TLS (не включено в демо)
+## Transport security
 
-## Управление секретами
+- The demo setup uses plain HTTP so that it is easy to start.
+- A real deployment should run behind HTTPS with valid certificates.
+- Mutual TLS for integrations with external systems is possible but not enabled.
 
-- **Конфигурация**: чувствительные данные (пароли, ключи) хранятся в переменных окружения или `.env` файлах
-- **Примеры**: см. `backend/ENV_EXAMPLE.md` и `appsettings.example.json`
-- **Git**: репозиторий не содержит реальные секреты (см. `.gitignore`)
-- **Redaction**: все реальные пароли/токены/IP заменены на плейсхолдеры `CHANGE_ME` (см. `docs/REDACTION.md`)
+## Secrets management
+
+- Sensitive values (passwords, keys) belong in environment variables or `.env` files. See `backend/ENV_EXAMPLE.md` and `appsettings.example.json`.
+- This repository contains no real secrets; all of them are replaced with `CHANGE_ME` (see `docs/REDACTION.md`).
 
 ## CORS
 
-- **Демо**: настроено `AllowAnyOrigin`, `AllowAnyMethod`, `AllowAnyHeader` для простоты
-- **Прод**: ограничено конкретными источниками, методами и заголовками
-- **Настройка**: в `Program.cs` через `AddCors()`
+- The demo configuration allows any origin, method and header for simplicity.
+- A real deployment should restrict origins, methods and headers (`AddCors()` in `Program.cs`).
 
-## Защита от инъекций
+## Injection protection
 
-- **SQL инъекции**: 
-  - EF Core использует параметризованные запросы по умолчанию
-  - `MySqlOneCService` использует параметризованные SQL запросы
-- **XSS**: Blazor автоматически экранирует вывод в HTML
-- **CSRF**: защита через токены в заголовках запросов
+- **SQL injection**: EF Core uses parameterised queries by default, and `MySqlOneCService` uses parameterised SQL.
+- **XSS**: Blazor escapes HTML output automatically.
 
-## Поверхность атаки PLC/Modbus
+## Known limitations (to harden before a real deployment)
 
-- **Изоляция**: API не пробрасывает прямые регистры Modbus напрямую
-- **Валидация команд**: все команды проходят через `PlcLogicEngine`, который проверяет:
-  - Текущий режим работы
-  - Состояние мостов (безопасность)
-  - Подтверждения от PLC
-  - Переходы между режимами
-- **Логирование**: все команды логируются с указанием причины для аудита
+- **CSRF**: there is no dedicated anti-forgery protection. API calls rely on a Bearer token in the header; because the token can also come from a cookie, a real deployment should set the cookie flags (HttpOnly, Secure, SameSite) and consider anti-forgery tokens.
+- **CORS and HTTPS**: see the sections above; the demo defaults are intentionally permissive.
+- **Rate limiting and account lockout**: not implemented.
 
+## PLC / Modbus attack surface
 
+- **Isolation**: the API does not expose raw Modbus registers.
+- **Command validation**: every command goes through `PlcLogicEngine`, which checks the current operating mode, the bridge state (safety), acknowledgements from the PLC and mode transitions.
+- **Logging**: every command is logged together with its reason, for audit.
