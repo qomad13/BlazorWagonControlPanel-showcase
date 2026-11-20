@@ -1,4 +1,3 @@
-# Документация для showcase
+# Documentation for the showcase
 docs/** linguist-documentation=true
 *.md linguist-documentation=true
-
