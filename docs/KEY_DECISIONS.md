@@ -1,157 +1,155 @@
-# Ключевые решения и компромиссы
+# Key decisions and trade-offs
 
-## 1. Blazor Server вместо SPA
+## 1. Blazor Server instead of a SPA
 
-**Решение**: Использовать Blazor Server для UI вместо отдельного SPA (React/Vue/Angular).
+**Decision**: use Blazor Server for the UI instead of a separate SPA (React/Vue/Angular).
 
-**Обоснование**:
-- Быстрее реализовать real-time UI через встроенный SignalR
-- Меньше фронтенд-бандла (нет необходимости в отдельном npm build)
-- Единая кодовая база на C# для backend и frontend
-- Проще интеграция с существующим ASP.NET Core кодом
+**Rationale**:
+- Real-time UI is faster to build on the built-in SignalR
+- Smaller front-end footprint (no separate npm build)
+- One C# codebase for backend and frontend
+- Simpler integration with the existing ASP.NET Core code
 
-**Компромиссы**:
-- Зависимость от стабильного соединения (при разрыве соединения теряется состояние)
-- Больше нагрузки на сервер (обработка UI на сервере)
-- Масштабирование требует sticky sessions или SignalR backplane
+**Trade-offs**:
+- Depends on a stable connection (state is lost when the circuit drops)
+- More server load (UI is processed on the server)
+- Scaling needs sticky sessions or a SignalR backplane
 
-**Альтернативы**: Blazor WebAssembly (больше загрузка, но работает офлайн), React SPA (больше инфраструктуры)
-
----
-
-## 2. SQLite по умолчанию
-
-**Решение**: Использовать SQLite как хранилище по умолчанию вместо PostgreSQL/MySQL.
-
-**Обоснование**:
-- Простая локальная демо-БД (один файл, не требует отдельного сервера)
-- Быстрый старт для разработки и демонстрации
-- Подходит для небольших развёртываний
-
-**Компромиссы**:
-- Ограниченная масштабируемость (один writer, ограничения по размеру)
-- Нет продвинутых функций (триггеры, хранимые процедуры ограничены)
-- Для масштабирования требуется миграция на PostgreSQL/MySQL
-
-**Альтернативы**: PostgreSQL (сложнее поднять демо), MySQL (требует Docker), InMemory (не сохраняет состояние)
+**Alternatives**: Blazor WebAssembly (larger download, works offline), React SPA (more infrastructure)
 
 ---
 
-## 3. Отдельный `PlcLogicEngine`
+## 2. SQLite by default
 
-**Решение**: Хранить всю бизнес-логику PLC в одном файле `Plc/PlcLogicEngine.cs`.
+**Decision**: use SQLite as the default store instead of PostgreSQL/MySQL.
 
-**Обоснование**:
-- Единая точка изменений для PLC-программистов
-- Проще ревью и аудит логики
-- Избежание дублирования логики в разных местах
-- Документированность (см. `Plc/README_PLC_LOGIC.md`)
+**Rationale**:
+- A simple local demo database (one file, no separate server)
+- Quick start for development and demonstration
+- Fine for small deployments
 
-**Компромиссы**:
-- Файл может расти и требовать рефакторинга
-- Требует дисциплины от разработчиков (не раскидывать логику по другим файлам)
-- Может стать узким местом при параллельной разработке
+**Trade-offs**:
+- Limited scalability (single writer, size limits)
+- Fewer advanced features (triggers and stored procedures are limited)
+- Scaling up means migrating to PostgreSQL/MySQL
 
-**Альтернативы**: Раскидать логику по сервисам (сложнее найти), использовать внешние скрипты (сложнее интеграция)
-
----
-
-## 4. JWT с cookie fallback
-
-**Решение**: Использовать JWT токены для API с возможностью хранения в cookie для Blazor.
-
-**Обоснование**:
-- Удобный UX в Blazor (токен автоматически отправляется при перезагрузке страницы)
-- Стандартный подход для REST API
-- Поддержка ролей и политик авторизации
-
-**Компромиссы**:
-- Требуется настройка безопасности cookie (HttpOnly, Secure, SameSite)
-- В прод требуется HTTPS для защиты токенов
-- Cookie могут быть уязвимы к XSS атакам (нужны правильные настройки)
-
-**Альтернативы**: Только JWT в заголовках (неудобно для Blazor), сессии (не подходят для API)
+**Alternatives**: PostgreSQL (harder to set up for a demo), MySQL (needs Docker), InMemory (does not keep state)
 
 ---
 
-## 5. Modbus как драйвер по умолчанию
+## 3. A single `PlcLogicEngine`
 
-**Решение**: Использовать Modbus TCP как основной протокол для связи с PLC вместо OPC UA.
+**Decision**: keep all PLC business logic in one file, `Plc/PlcLogicEngine.cs`.
 
-**Обоснование**:
-- Минимальная зависимость (библиотека NModbus)
-- Простота реализации и отладки
-- Широко распространённый протокол в промышленности
-- Меньше overhead по сравнению с OPC UA
+**Rationale**:
+- One place to change for PLC programmers
+- Easier review and audit of the logic
+- No duplicated logic in different places
 
-**Компромиссы**:
-- Меньше типизации данных (всё через регистры)
-- Ручное ведение регистров (требует документирования маппинга)
-- Ограниченные возможности по сравнению с OPC UA (метаданные, подписки)
+**Trade-offs**:
+- The file can grow and need refactoring
+- Requires discipline from developers (do not scatter logic across other files)
+- Can become a bottleneck in parallel development
 
-**Альтернативы**: OPC UA (больше возможностей, но сложнее), проприетарные протоколы (зависимость от вендора)
-
----
-
-## 6. Шаблоны печати в wwwroot
-
-**Решение**: Хранить шаблоны печати (`*.prn`) в `wwwroot/prn-templates/`.
-
-**Обоснование**:
-- Прозрачность и редактируемость (можно менять без перекомпиляции)
-- Версионирование через Git
-- Простота обновления (замена файла)
-
-**Компромиссы**:
-- Требует контроля версий шаблонов
-- Нужна валидация шаблонов при загрузке
-- Риск ошибок при ручном редактировании
-
-**Альтернативы**: Хранить в БД (сложнее редактирование), генерировать программно (меньше гибкости)
+**Alternatives**: spread the logic over services (harder to find), use external scripts (harder to integrate)
 
 ---
 
-## 7. Синтетический seed и redaction
+## 4. JWT with a cookie fallback
 
-**Решение**: Использовать полностью синтетические данные для демо и скрывать все прод-данные.
+**Decision**: use JWT tokens for the API, with the option of keeping the token in a cookie for Blazor.
 
-**Обоснование**:
-- Безопасная демонстрация без раскрытия секретов клиентов
-- Соответствие требованиям безопасности и конфиденциальности
-- Возможность публичного showcase
+**Rationale**:
+- Convenient UX in Blazor (the token is sent automatically after a page reload)
+- Standard approach for a REST API
+- Supports roles and authorisation policies
 
-**Компромиссы**:
-- Поведение с боевыми нагрузками не показано
-- Некоторые edge cases могут не проявляться на синтетических данных
-- Требует дополнительных усилий на создание демо-данных
+**Trade-offs**:
+- Cookie security must be configured (HttpOnly, Secure, SameSite)
+- A real deployment needs HTTPS to protect the tokens
+- Cookies can be exposed to XSS if configured badly
 
-**Альтернативы**: Использовать анонимизированные прод-данные (риск утечки), вообще не показывать данные (меньше демонстративности)
+**Alternatives**: JWT in headers only (inconvenient for Blazor), sessions (not suited to an API)
 
 ---
 
-## 8. Гибридный OCR пайплайн (EasyOCR + PaddleOCR)
+## 5. Modbus as the default driver
 
-**Решение**: Использовать комбинированный подход EasyOCR для детекции областей и PaddleOCR для распознавания цифр.
+**Decision**: use Modbus TCP as the main protocol to the PLC instead of OPC UA.
 
-**Обоснование**:
-- **EasyOCR** быстро обрабатывает full HD изображения и определяет области с номерами вагонов
-- **PaddleOCR** отлично распознаёт цифры, но медленно обрабатывает полные full HD изображения
-- Комбинация: EasyOCR выступает "наводчиком", определяя области интереса, PaddleOCR распознаёт только эти области
-- Результат: время обработки ~1 секунда на кадр full HD при высокой точности распознавания даже на битых/загрязнённых вагонах
+**Rationale**:
+- Minimal dependencies (the NModbus library)
+- Simple to implement and debug
+- Widespread in industry
+- Less overhead than OPC UA
 
-**Архитектура пайплайна**:
-1. Получение full HD снимка с RTSP камеры
-2. EasyOCR анализирует изображение и находит области с потенциальными номерами вагонов
-3. Изображения областей передаются в PaddleOCR для распознавания цифр
-4. Результаты валидируются и возвращаются в систему
+**Trade-offs**:
+- Less data typing (everything is registers)
+- Register map is maintained by hand (the mapping must be documented)
+- Fewer capabilities than OPC UA (metadata, subscriptions)
 
-**Компромиссы**:
-- Требует два OCR движка (больше зависимостей и ресурсов)
-- Сложнее отладка (два этапа обработки)
-- В showcase заменён на заглушку `CameraStubService` для упрощения демонстрации
+**Alternatives**: OPC UA (more capable but more complex), proprietary protocols (vendor lock-in)
 
-**Альтернативы**: 
-- Только EasyOCR (быстрее, но хуже точность на битых вагонах)
-- Только PaddleOCR (лучше точность, но медленнее на full HD)
-- Коммерческие OCR решения (выше стоимость, зависимость от вендора)
+---
 
+## 6. Print templates in wwwroot
+
+**Decision**: keep print templates (`*.prn`) in `wwwroot/prn-templates/`.
+
+**Rationale**:
+- Transparent and editable (change without recompiling)
+- Versioned in Git
+- Easy to update (replace a file)
+
+**Trade-offs**:
+- Template versions need control
+- Templates should be validated on load
+- Risk of mistakes with manual editing
+
+**Alternatives**: store in the database (harder to edit), generate in code (less flexible)
+
+---
+
+## 7. Synthetic seed and redaction
+
+**Decision**: use fully synthetic data for the demo and strip everything that comes from the real system.
+
+**Rationale**:
+- Safe to demonstrate without exposing customer data
+- Meets confidentiality requirements
+- Makes a public showcase possible
+
+**Trade-offs**:
+- Behaviour under real load is not shown
+- Some edge cases may not appear in synthetic data
+- Extra effort to build the demo data
+
+**Alternatives**: anonymised real data (leak risk), no data at all (less illustrative)
+
+---
+
+## 8. Hybrid OCR pipeline (EasyOCR + PaddleOCR)
+
+**Decision**: combine EasyOCR for locating regions with PaddleOCR for reading the digits.
+
+**Rationale** (timings are the author's own measurements, not a benchmark):
+- **EasyOCR** processes Full HD frames quickly and finds the regions that hold wagon numbers
+- **PaddleOCR** reads digits well but is slow on full Full HD frames (about 3-5 s)
+- Together: EasyOCR acts as the "spotter" and PaddleOCR reads only those regions
+- Result: about 1 second per Full HD frame with good accuracy, even on damaged or dirty wagons
+
+**Pipeline**:
+1. Take a Full HD snapshot from the RTSP camera
+2. EasyOCR analyses the image and finds regions that may hold wagon numbers
+3. The cropped regions go to PaddleOCR to read the digits
+4. Results are validated and returned to the system
+
+**Trade-offs**:
+- Two OCR engines (more dependencies and resources)
+- Harder debugging (two processing stages)
+- Replaced by the `CameraStubService` stub in this showcase to keep the demo simple
+
+**Alternatives**:
+- EasyOCR only (faster, but less accurate on damaged wagons)
+- PaddleOCR only (more accurate, but slower on Full HD)
+- Commercial OCR products (higher cost, vendor dependency)
