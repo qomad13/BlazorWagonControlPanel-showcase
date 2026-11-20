@@ -1,111 +1,68 @@
-# VagonLab Showcase
+# VagonLab: wagon processing line control panel (showcase)
 
-> **English summary.** VagonLab is a control panel for a railway-wagon processing line, built with Blazor Server, ASP.NET Core and EF Core. It talks to PLCs over Modbus, shows RTSP camera feeds, recognises wagon numbers with a hybrid OCR pipeline (EasyOCR + PaddleOCR), prints labels and syncs with an external MySQL database. Access is role-based (Developer / Administrator / Technician). I designed and built it end to end.
->
-> This repository is a **sanitized showcase**: architecture, data flow, key decisions and configuration examples with placeholders. Production code, customer data and infrastructure details are intentionally not included (see [docs/REDACTION.md](docs/REDACTION.md)). Walkthrough on a call: ledachkov.ilya@gmail.com
+A control panel for a railway-wagon processing line that I designed and built end to end. Operators monitor and command two tracks; the system talks to the PLC over Modbus TCP, takes snapshots from RTSP cameras, recognises wagon numbers with a hybrid OCR pipeline (EasyOCR + PaddleOCR), prints labels and reads reference data from an external MySQL database (1C).
 
+> **About this repository.** This is a **sanitized showcase**: architecture, data flow, key decisions (ADRs), configuration examples with placeholders, a database schema and a synthetic seed. It contains **no application source code**, so there is nothing to build or run here. Production code, customer data and infrastructure details are intentionally not included (see [docs/REDACTION.md](docs/REDACTION.md)).
+> A walkthrough of the real code is available on a call: ledachkov.ilya@gmail.com
 
-## TL;DR
+## Stack
 
-- **Панель управления вагонным участком**: SCADA-система для управления производственным процессом обработки вагонов с интеграцией Modbus/PLC, камерами RTSP, гибридным OCR пайплайном (EasyOCR + PaddleOCR) и печатью ярлыков.
-- **Технологический стек**: Blazor Server + ASP.NET Core API + EF Core (SQLite по умолчанию) + интеграция с внешней БД 1C (MySQL).
-- **Основные сценарии**: мониторинг двух треков, управление мостами/люками, автоматическое позиционирование, распознавание номеров вагонов через OCR, учёт печати, базовая аутентификация по ролям (Developer/Administrator/Technician).
+| Area | Technology |
+|---|---|
+| UI | Blazor Server (SignalR circuits), localisation uk/en |
+| API | ASP.NET Core controllers, JWT with cookie fallback, role-based policies |
+| Data | EF Core, SQLite by default; external MySQL (1C) behind an interface |
+| PLC | Modbus TCP, centralised PLC logic engine |
+| Cameras / OCR | RTSP snapshots via OpenCvSharp; EasyOCR + PaddleOCR hybrid pipeline |
+| Printing | Label templates sent to a network printer over TCP/IP |
 
-## Что посмотреть за 3–5 минут
+## Read this in 5 minutes
 
-1. **[`docs/DIAGRAMS.md`](docs/DIAGRAMS.md)** — визуализация компонентов, поток данных, последовательность событий (Mermaid-диаграммы).
-2. **[`docs/KEY_DECISIONS.md`](docs/KEY_DECISIONS.md)** — 5–7 ключевых технических решений и компромиссов.
-3. **[`backend/WHERE_TO_LOOK.md`](backend/WHERE_TO_LOOK.md)** и **[`frontend/WHERE_TO_LOOK.md`](frontend/WHERE_TO_LOOK.md)** — быстрые точки входа в код с пояснениями.
-4. **[`DEMO_INSTRUCTIONS.md`](DEMO_INSTRUCTIONS.md)** — пошаговая демонстрация за 5 минут.
+1. [`docs/DIAGRAMS.md`](docs/DIAGRAMS.md): components, event sequence and the OCR pipeline (Mermaid).
+2. [`docs/KEY_DECISIONS.md`](docs/KEY_DECISIONS.md): the key technical decisions and their trade-offs.
+3. [`backend/WHERE_TO_LOOK.md`](backend/WHERE_TO_LOOK.md) and [`frontend/WHERE_TO_LOOK.md`](frontend/WHERE_TO_LOOK.md): where the important code lives in the full application, and why.
+4. [`DEMO_INSTRUCTIONS.md`](DEMO_INSTRUCTIONS.md): a suggested 5-minute walkthrough.
 
-## Состав витрины
+## Contents
 
-### Документация (`docs/`)
-- **`01-architecture.md`** — high-level архитектура, компоненты, интеграции.
-- **`02-data-flow.md`** — путь данных, жизненный цикл события от UI до PLC.
-- **`03-multitenancy.md`** — мультиарендность (если применимо).
-- **`04-security.md`** — аутентификация, авторизация, базовые защиты.
-- **`05-reliability.md`** — ретраи, идемпотентность, health checks.
-- **`DIAGRAMS.md`** — 2–3 Mermaid-диаграммы (компоненты, multitenancy, sequence).
-- **`KEY_DECISIONS.md`** — ключевые решения/компромиссы (5–7 пунктов).
-- **`DEMO_WALKTHROUGH.md`** — обзор функциональности системы.
-- **`REDACTION.md`** — что и почему скрыто в showcase.
-- **`adr/`** — архитектурные решения (ADR): 0001-use-blazor-server, 0002-centralize-plc-logic, 0003-default-sqlite-storage, 0004-hybrid-ocr-pipeline.
+### Documentation (`docs/`)
+- `01-architecture.md`: layers, components, integrations.
+- `02-data-flow.md`: the lifecycle of an operator action, from UI to PLC and back.
+- `03-multitenancy.md`: multi-tenancy (not used in the current version; notes on how it would be added).
+- `04-security.md`: authentication, authorisation and known limitations.
+- `05-reliability.md`: error handling, idempotency of PLC commands, background services.
+- `DIAGRAMS.md`: Mermaid diagrams.
+- `KEY_DECISIONS.md`: key decisions and trade-offs.
+- `DEMO_WALKTHROUGH.md`: overview of the functionality.
+- `REDACTION.md`: what was removed or replaced, and why.
+- `adr/`: architecture decision records (Blazor Server, centralised PLC logic, SQLite by default, hybrid OCR pipeline).
 
-### Навигаторы кода
-- **`backend/WHERE_TO_LOOK.md`** — 6–8 файлов backend с пояснением "зачем смотреть".
-- **`frontend/WHERE_TO_LOOK.md`** — 6–8 файлов frontend с пояснением.
+### Code maps
+- `backend/WHERE_TO_LOOK.md` and `frontend/WHERE_TO_LOOK.md`: entry points of the full application with a short note on each.
 
-### Примеры окружения
-- **`backend/ENV_EXAMPLE.md`** — только placeholders (`CHANGE_ME`).
-- **`frontend/README.md`** — описание frontend и примеры env.
-- **`appsettings.example.json`** — пример конфигурации с плейсхолдерами.
-- **`docker-compose.example.yml`** — демо-БД MySQL с паролями `CHANGE_ME`.
+### Configuration and data
+- `backend/ENV_EXAMPLE.md`, `appsettings.example.json`: configuration with placeholders only (`CHANGE_ME`).
+- `docker-compose.example.yml`: a demo MySQL used to illustrate the external 1C integration.
+- `sql/schema_only/core_tables.sql`: the data model (CREATE TABLE only, SQLite syntax).
+- `sql/seed_demo.sql`: a synthetic seed.
 
-### SQL
-- **`sql/schema_only/core_tables.sql`** — только CREATE TABLE, без данных.
-- **`sql/seed_demo.sql`** — синтетический seed (минимум для оживления демо).
-
-## Ограничения
-
-- **Без прод-доменов, токенов, IP и реальных данных**: все чувствительные значения заменены на плейсхолдеры `CHANGE_ME`.
-- **Конфиги**: `appsettings.json` содержит демо-значения; реальные секреты должны быть в `.env` (игнорируется git).
-- **Описана только безопасная демо-топология**: прод-инфраструктура, фаерволы, VPN, сетевые ACL не документируются.
-
-## Локальный демо-прогон
-
-### Предварительные требования
-- .NET 8 SDK
-- Docker и Docker Compose (опционально, для демо-MySQL)
-
-### Быстрый старт
-
-1. **Применить миграции БД**:
-   ```bash
-   dotnet ef database update
-   ```
-
-2. **Запустить приложение**:
-   ```bash
-   dotnet run
-   ```
-
-3. **Открыть в браузере**: http://localhost:5000
-
-### Демо-сценарий
-
-1. При первом запуске создаются тестовые пользователи (см. `Program.cs`)
-2. Войти в систему с учётными данными из seed данных
-3. Изучить структуру проекта через навигаторы (`backend/WHERE_TO_LOOK.md`, `frontend/WHERE_TO_LOOK.md`)
-4. Просмотреть документацию архитектуры и ключевых решений
-5. Запустить демонстрацию согласно [`DEMO_INSTRUCTIONS.md`](DEMO_INSTRUCTIONS.md)
-
-## Структура проекта
+## Layout of the full application (not included here)
 
 ```
-├── Components/          # Blazor Server компоненты и страницы
-├── Controllers/        # ASP.NET Core API контроллеры
-├── Data/               # EF Core DbContext и фабрика
-├── Models/             # Модели данных и DTOs
-├── Plc/                # PLC/Modbus логика и драйверы
-├── Services/           # Бизнес-логика сервисов
-├── Migrations/         # EF Core миграции
-├── Resources/          # Локализация (uk/en)
-├── wwwroot/            # Статические файлы (CSS, JS, шаблоны печати)
-├── docs/               # Документация showcase
-├── backend/            # Backend навигаторы
-├── frontend/           # Frontend навигаторы
-├── sql/                # SQL схемы и seed
-└── Program.cs           # Точка входа и конфигурация DI
+Components/   Blazor Server components and pages
+Controllers/  ASP.NET Core API controllers
+Data/         EF Core DbContext and factory
+Models/       data models and DTOs
+Plc/          PLC / Modbus logic and drivers
+Services/     business logic services
+Migrations/   EF Core migrations
+Resources/    localisation (uk/en)
+wwwroot/      static files (CSS, JS, print templates)
+Program.cs    entry point and DI configuration
 ```
 
-## Дополнительные ресурсы
+## Limitations of this showcase
 
-- [Архитектура](docs/01-architecture.md)
-- [Поток данных](docs/02-data-flow.md)
-- [Безопасность](docs/04-security.md)
-- [Надёжность](docs/05-reliability.md)
-- [Диаграммы](docs/DIAGRAMS.md)
-- [Ключевые решения](docs/KEY_DECISIONS.md)
-- [Политика редактирования](docs/REDACTION.md)
-
+- No source code, so no build or run instructions.
+- No domains, tokens, real IP addresses or customer data; every sensitive value is replaced with a placeholder.
+- Only a safe, generic topology is described; production infrastructure, firewalls, VPN and network ACLs are not documented.
