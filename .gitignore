@@ -1,6 +1,6 @@
-# Showcase repository - только документация
+# Showcase repository: documentation only
 
-# Исключить весь код, оставить только документацию
+# Exclude all code, keep documentation only
 /*
 !README.md
 !DEMO_INSTRUCTIONS.md
@@ -13,7 +13,7 @@
 !appsettings.example.json
 !docker-compose.example.yml
 
-# Внутри backend и frontend оставить только нужные файлы
+# Inside backend and frontend keep only the needed files
 backend/*
 !backend/WHERE_TO_LOOK.md
 !backend/ENV_EXAMPLE.md
@@ -22,7 +22,7 @@ frontend/*
 !frontend/WHERE_TO_LOOK.md
 !frontend/README.md
 
-# Исключить временные файлы
+# Exclude temporary files
 .DS_Store
 Thumbs.db
 *.swp
