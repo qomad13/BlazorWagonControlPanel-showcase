@@ -1,5 +1,5 @@
--- Синтетический seed для демо
--- Пароли сгенерированы через BCrypt.Net.BCrypt.HashPassword()
+-- Synthetic seed data for the demo
+-- Password hashes were generated with BCrypt.Net.BCrypt.HashPassword()
 INSERT INTO Users (Login, Password, UserType, DisplayName, CreatedAt, UpdatedAt, FullName, Role)
 VALUES
   ('admin', '$2a$11$CHANGE_ME_HASHED_PASSWORD_FOR_ADMIN', 'internal', 'Admin Demo', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Admin Demo', 'Administrator'),
