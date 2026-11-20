@@ -1,4 +1,4 @@
--- Демонстрационная схема (SQLite-совместимый синтаксис)
+-- Demo schema (SQLite-compatible syntax)
 CREATE TABLE IF NOT EXISTS ButtonActions (
     Id INTEGER PRIMARY KEY AUTOINCREMENT,
     ButtonName TEXT NOT NULL,
