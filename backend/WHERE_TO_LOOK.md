@@ -1,14 +1,13 @@
-# Backend — точки входа
+# Backend: entry points (full app, not included in this repository)
 
-- `Program.cs` — конфигурация DI, аутентификация/авторизация, Blazor Server, инициализация PLC.
-- `Controllers/ProcessController.cs` — команды и статусы производственного процесса.
-- `Controllers/ModbusSettingsController.cs` — управление конфигом Modbus/PLC.
-- `Controllers/PrinterController.cs` — печать ярлыков и логи печати.
-- `Controllers/CameraController.cs` — управление камерами и распознавание номеров вагонов.
-- `Controllers/AuthController.cs` + `Services/JwtTokenService.cs` — выдача токенов, роли.
-- `Plc/PlcLogicEngine.cs` — единая точка бизнес-логики PLC (команды/acks).
-- `Services/PlcBusFactory.cs` + `Plc/PlcBus.cs` — создание и работа шины PLC/Modbus.
-- `Services/CameraStubService.cs` — заглушка для распознавания номеров (выдаёт "0000000", заменяет отдельный OCR модуль с гибридным пайплайном EasyOCR + PaddleOCR).
-- `Services/SnapshotService.cs` — получение снимков с RTSP камер через OpenCvSharp.
-- `Data/VagonDbContext.cs` + `Migrations/*` — модель данных и миграции.
-
+- `Program.cs`: DI configuration, authentication/authorisation, Blazor Server, PLC initialisation.
+- `Controllers/ProcessController.cs`: commands and status of the production process.
+- `Controllers/ModbusSettingsController.cs`: Modbus/PLC configuration.
+- `Controllers/PrinterController.cs`: label printing and print logs.
+- `Controllers/CameraController.cs`: camera control and wagon number recognition.
+- `Controllers/AuthController.cs` + `Services/JwtTokenService.cs`: token issuing, roles.
+- `Plc/PlcLogicEngine.cs`: the single place for PLC business logic (commands/acks).
+- `Services/PlcBusFactory.cs` + `Plc/PlcBus.cs`: creating and running the PLC/Modbus bus.
+- `Services/CameraStubService.cs`: stub for number recognition (returns "0000000"); stands in for the separate OCR module with the EasyOCR + PaddleOCR hybrid pipeline.
+- `Services/SnapshotService.cs`: snapshots from RTSP cameras through OpenCvSharp.
+- `Data/VagonDbContext.cs` + `Migrations/*`: data model and migrations.
