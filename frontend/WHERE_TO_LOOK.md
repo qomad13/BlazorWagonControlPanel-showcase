@@ -1,11 +1,10 @@
-# Frontend — точки входа
+# Frontend: entry points (full app, not included in this repository)
 
-- `Components/App.razor` — корневой компонент, маршрутизация.
-- `Components/Routes.razor` — карта маршрутов страниц.
-- `Components/Pages/Developer.razor` — демо-страница настроек (Modbus, камеры, пинг, БД).
-- `Components/Pages/Process.razor` — основные операции с треками/люками.
-- `Components/Pages/Login.razor` — аутентификация в Blazor UI.
-- `Components/RedirectToLogin.razor` — обработка отсутствия токена.
-- `wwwroot/prn-templates/*.prn` — шаблоны печати.
-- `wwwroot/js/site.js` — вспомогательные скрипты фронта.
-
+- `Components/App.razor`: root component, routing.
+- `Components/Routes.razor`: page route map.
+- `Components/Pages/Developer.razor`: demo settings page (Modbus, cameras, ping, database).
+- `Components/Pages/Process.razor`: main track/hatch operations.
+- `Components/Pages/Login.razor`: authentication in the Blazor UI.
+- `Components/RedirectToLogin.razor`: handling a missing token.
+- `wwwroot/prn-templates/*.prn`: print templates.
+- `wwwroot/js/site.js`: helper front-end scripts.
