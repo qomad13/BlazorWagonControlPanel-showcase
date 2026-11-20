@@ -1,4 +1,4 @@
-# Backend ENV (пример)
+# Backend ENV (example)
 
 ```
 ASPNETCORE_ENVIRONMENT=Development
@@ -13,5 +13,4 @@ Printer__Driver=demo
 Camera__SnapshotDirectory=./snapshots
 ```
 
-Не хранить реальные значения в репозитории; использовать .env (игнорируется).
-
+Do not keep real values in the repository; use a .env file (git-ignored).
