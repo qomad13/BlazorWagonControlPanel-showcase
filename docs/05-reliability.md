@@ -1,78 +1,44 @@
-# Надёжность (демо)
+# Reliability
 
-## Обработка ошибок и ретраи
+## Error handling and retries
 
-- **Try/Catch блоки**: все операции с внешними системами обёрнуты в try/catch:
-  - MySQL соединения (`MySqlOneCService`)
-  - RTSP камеры (`SnapshotService`)
-  - Modbus операции (`ModbusProtocol`)
-  - Печать (`PrinterService`)
-- **Логирование ошибок**: все исключения логируются с контекстом для диагностики
-- **Расширение**: можно использовать библиотеку Polly для retry policies с экспоненциальной задержкой
+- **Try/catch** wraps every operation that talks to an external system: MySQL (`MySqlOneCService`), RTSP cameras (`SnapshotService`), Modbus (`ModbusProtocol`) and printing (`PrinterService`).
+- **Error logging**: exceptions are logged with context for diagnosis.
+- **Possible extension**: Polly retry policies with exponential back-off.
 
-## Идемпотентность
+## Idempotency
 
-- **Команды PLC**: формируются на основе текущего состояния, а не на основе предыдущих команд
-- **PlcLogicEngine**: возвращает `null`, если действий не требуется (избегает дублирования команд)
-- **Проверка состояния**: перед отправкой команды проверяется текущий режим работы и состояние системы
-- **Защита от повторной отправки**: для критических команд (например, команда 12 для перехода 2→0) используется флаг `_sentCommand12` для предотвращения повторной отправки
+- **PLC commands** are formed from the current state, not from previous commands.
+- `PlcLogicEngine` returns `null` when no action is required, which avoids duplicate commands.
+- The operating mode and system state are checked before a command is sent.
+- **Resend protection**: for critical commands (for example command 12 for the 2→0 transition) a `_sentCommand12` flag prevents sending it again.
 
-## Health Checks
+## Health checks
 
-- **Стартовая проверка**: при запуске приложения проверяется доступность MySQL БД 1C (см. `Program.cs`)
-- **Логирование статуса**: результаты проверки логируются для мониторинга
-- **Расширение**: можно добавить эндпоинт `/health` с проверками:
-  - Доступность БД (SQLite/MySQL)
-  - Доступность PLC (Modbus)
-  - Доступность внешних сервисов (1C БД)
-  - Состояние фоновых задач
+- **Start-up check**: the application verifies that the 1C MySQL database is reachable (see `Program.cs`) and logs the result.
+- **Possible extension**: a `/health` endpoint covering the database (SQLite/MySQL), the PLC (Modbus), external services (1C) and the state of background tasks.
 
-## Фоновые задачи
+## Background tasks
 
-- **PlcBusInitializationService**: инициализирует соединение с PLC при старте приложения
-  - Выполняется как `BackgroundService`
-  - Не блокирует запуск приложения
-  - Логирует результаты инициализации
-- **SamplerService**: периодически опрашивает PLC (каждые 5 секунд)
-  - Асинхронная работа через `Task.Delay()`
-  - Обработка ошибок с логированием
-  - Не прерывает работу при временных сбоях
-- **OneCConnectionMonitorService**: мониторит соединение с БД 1C
-  - Периодическая проверка доступности
-  - Логирование статуса для диагностики
+- **PlcBusInitializationService** initialises the PLC connection at start-up as a `BackgroundService`. It does not block application start and logs the result.
+- **SamplerService** polls the PLC every 5 seconds using `Task.Delay()`. Errors are logged and temporary failures do not stop the loop.
+- **OneCConnectionMonitorService** periodically checks the 1C database and logs the status.
 
-## Логирование
+## Logging
 
-- **Уровни логирования**: настроены в `appsettings.json`:
-  - `Information` — для важных событий (команды PLC, печать)
-  - `Warning` — для предупреждений
-  - `Error` — для ошибок
-  - `Debug` — для детальной отладки (отключено в прод)
-- **Контекст**: логи содержат контекстную информацию (номер трека, номер вагона, причина команды)
-- **Структурированное логирование**: используется встроенное логирование .NET с параметризованными сообщениями
-- **Расширение**: можно использовать централизованное логирование (Serilog + Seq, Application Insights, и т.д.)
+- **Levels** are configured in `appsettings.json`: `Information` for important events (PLC commands, printing), `Warning`, `Error`, and `Debug` for detailed diagnosis.
+- **Context**: logs carry the track number, wagon number and the reason for a command.
+- **Format**: built-in .NET logging with parameterised messages.
+- **Possible extension**: centralised logging (Serilog + Seq, Application Insights, and similar).
 
-## Fail-Safe механизмы
+## Fail-safe behaviour
 
-- **Безопасные команды**: при нежелательных состояниях система отправляет команды сброса (команда 0):
-  - Мосты опущены (безопасность)
-  - Нет подтверждений от PLC
-  - Неожиданные режимы работы
-- **Проверка состояния**: перед выполнением критических операций проверяется состояние системы:
-  - Маски мостов (все должны быть подняты для безопасной работы)
-  - Подтверждения от PLC
-  - Режим работы трека
-- **Защита от дублирования**: предотвращение повторной отправки критических команд
+- **Safe commands**: in undesired states the system sends a reset command (command 0), for example when the bridges are down (safety), when there is no acknowledgement from the PLC, or when the mode is unexpected.
+- **State checks** before critical operations: bridge masks (all bridges must be up for safe operation), PLC acknowledgements and the track operating mode.
+- **Duplicate protection**: critical commands are not sent twice.
 
-## Мониторинг и наблюдаемость
+## Monitoring and observability
 
-- **Логи операций**: все действия оператора логируются в `ButtonActions`
-- **Логи печати**: все операции печати логируются в `PrinterLogs`
-- **Логи PLC**: все команды и ответы от PLC логируются с указанием причины
-- **Метрики**: можно расширить для отслеживания:
-  - Количество обработанных вагонов
-  - Время выполнения операций
-  - Частота ошибок
-  - Доступность внешних систем
-
-
+- **Operation logs**: operator actions are stored in `ButtonActions` and print operations in `PrinterLogs`.
+- **PLC logs**: every command and response is logged with its reason.
+- **Possible metrics**: number of processed wagons, operation times, error rate, availability of external systems.
