@@ -1,86 +1,40 @@
-# Demo guide: 5-minute walkthrough
+# Walkthrough guide: 5 minutes
 
-## Подготовка (5 минут)
+This repository contains documentation only, so the walkthrough is a guided read. A live walkthrough of the full application is available on a call.
 
-### 1. Запуск демо-MySQL (опционально)
-```bash
-docker compose -f docker-compose.example.yml up -d
-```
+## Suggested route
 
-### 2. Применение миграций БД
-```bash
-dotnet ef database update
-```
+### 1. Architecture and layers (1 minute)
+- Layout of the full application: `Components/` (UI), `Controllers/` (API), `Services/` (business logic), `Plc/` (PLC logic). See the README.
+- The path of a command: UI → API → Services → PLC (`docs/DIAGRAMS.md`).
+- PLC rules live in one place: `PlcLogicEngine.cs`.
 
-Или применить схемы вручную:
+### 2. Key technical decisions (1 minute)
+- **Blazor Server**: real-time UI over SignalR, one C# codebase.
+- **Hybrid OCR pipeline**: EasyOCR finds the number areas, PaddleOCR reads the digits; about 1 second per Full HD frame.
+- **SQLite by default**: simple local setup; migration to PostgreSQL/MySQL for scaling.
+- **JWT with cookie fallback**: convenient for Blazor page reloads.
+
+### 3. Integrations and data flow (1 minute)
+- Modbus PLC: register polling and commands (`docs/02-data-flow.md`).
+- External MySQL (1C): reference data about wagons, behind an interface.
+- Logging of operator actions and printing; background services for polling and connection monitoring.
+
+### 4. Functionality (1-2 minutes)
+- `docs/DEMO_WALKTHROUGH.md`: the pages (home, developer settings, operations, printing) and what an operator can do.
+
+## Optional: look at the data model
+
 ```bash
 sqlite3 vagonlab.db < sql/schema_only/core_tables.sql
 sqlite3 vagonlab.db < sql/seed_demo.sql
 ```
 
-### 3. Запуск приложения
-```bash
-dotnet run
-```
+The optional demo MySQL for the 1C integration: `docker compose -f docker-compose.example.yml up -d`.
 
-### 4. Открыть в браузере
-http://localhost:5000
+## Topics for discussion
 
-## Демонстрация (3-5 минут)
-
-### 1. Архитектура и разделение слоёв (1 минута)
-- Показать структуру проекта: `Components/` (UI), `Controllers/` (API), `Services/` (бизнес-логика), `Plc/` (PLC логика)
-- Показать путь данных: UI → API → Services → PLC
-- Упомянуть централизованную PLC-логику в `PlcLogicEngine.cs`
-
-### 2. Ключевые технические решения (1 минута)
-- **Blazor Server**: real-time UI через SignalR, единая кодовая база C#
-- **Гибридный OCR пайплайн**: EasyOCR (детекция) + PaddleOCR (распознавание) — ~1 сек на кадр full HD
-- **SQLite по умолчанию**: простота демо, миграция на PostgreSQL/MySQL для масштабирования
-- **JWT с cookie fallback**: удобный UX в Blazor
-
-### 3. Интеграции и потоки данных (1 минута)
-- Показать работу с Modbus PLC (опрос регистров, команды)
-- Показать интеграцию с MySQL 1C (чтение справочных данных)
-- Показать логирование операций (структурированные логи с контекстом)
-- Упомянуть фоновые задачи (опрос PLC, мониторинг соединений)
-
-### 4. Демонстрация функциональности (1-2 минуты)
-- Войти в систему (JWT аутентификация)
-- Показать страницу операций (управление треками, команды PLC)
-- Показать настройки (Modbus, камеры, БД)
-- Показать логи операций и печати
-- Переключить язык интерфейса (локализация)
-
-## Ключевые моменты для обсуждения
-
-### Архитектурные решения
-- Почему Blazor Server вместо SPA
-- Почему гибридный OCR пайплайн (EasyOCR + PaddleOCR)
-- Почему SQLite по умолчанию
-- Централизация PLC-логики в одном файле
-
-### Масштабируемость
-- SignalR backplane для горизонтального масштабирования
-- Миграция БД на PostgreSQL/MySQL
-- Разделение ответственности между слоями
-
-### Надёжность
-- Обработка ошибок и ретраи
-- Идемпотентность команд PLC
-- Фоновые задачи и мониторинг
-
-### Безопасность
-- JWT аутентификация с cookie fallback
-- Авторизация по ролям
-- Защита от SQL инъекций (EF Core, параметризованные запросы)
-
-## Структура для показа
-
-1. **README.md** — обзор проекта и быстрые ссылки
-2. **docs/DIAGRAMS.md** — визуализация архитектуры
-3. **docs/KEY_DECISIONS.md** — ключевые технические решения
-4. **docs/01-architecture.md** — детальная архитектура
-5. **backend/WHERE_TO_LOOK.md** и **frontend/WHERE_TO_LOOK.md** — точки входа в код
-6. **docs/adr/** — архитектурные решения (ADR)
-
+- **Architecture**: why Blazor Server instead of an SPA; why a hybrid OCR pipeline; why SQLite by default; why PLC logic is centralised in one file.
+- **Scalability**: SignalR backplane for horizontal scaling, moving the database to PostgreSQL/MySQL, separation of layers.
+- **Reliability**: error handling, idempotent PLC commands, background tasks and monitoring.
+- **Security**: JWT with role-based policies, parameterised queries (see docs/04-security.md for known limitations).
