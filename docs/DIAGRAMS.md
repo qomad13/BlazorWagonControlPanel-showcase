@@ -1,18 +1,18 @@
-# Диаграммы (Mermaid)
+# Diagrams (Mermaid)
 
-## Компоненты
+## Components
 ```mermaid
 flowchart LR
   UI[Blazor UI] --> API[ASP.NET Core API]
-  API --> Services[Сервисы]
-  Services --> PLC[PLC/Modbus]
-  Services --> DB[SQLite EF Core]
-  Services --> OneC[MySQL 1C (демо)]
-  Services --> Print[Принтер]
-  Services --> Camera[RTSP Камеры]
+  API --> Services[Services]
+  Services --> PLC[PLC / Modbus]
+  Services --> DB[SQLite via EF Core]
+  Services --> OneC["MySQL 1C (demo)"]
+  Services --> Print[Printer]
+  Services --> Camera[RTSP cameras]
 ```
 
-## Поток события (sequence)
+## Event flow (sequence)
 ```mermaid
 sequenceDiagram
   participant Operator
@@ -20,29 +20,28 @@ sequenceDiagram
   participant API as API Controller
   participant S as Services
   participant PLC as PLC/Modbus
-  Operator->>UI: Нажимает действие
+  Operator->>UI: Presses an action
   UI->>API: POST /action (JWT)
   API->>S: Validate + authorize
-  S->>PLC: Команда (через PlcBus)
-  S-->>API: Результат/лог
-  API-->>UI: Ответ
-  UI-->>Operator: Обновлённый статус
+  S->>PLC: Command (via PlcBus)
+  S-->>API: Result / log
+  API-->>UI: Response
+  UI-->>Operator: Updated status
 ```
 
-## OCR пайплайн (EasyOCR + PaddleOCR)
+## OCR pipeline (EasyOCR + PaddleOCR)
 ```mermaid
 sequenceDiagram
   participant Camera as RTSP Camera
   participant Snapshot as SnapshotService
-  participant EasyOCR as EasyOCR<br/>(Детекция)
-  participant PaddleOCR as PaddleOCR<br/>(Распознавание)
-  participant System as Система
-  
-  Camera->>Snapshot: Full HD снимок
-  Snapshot->>EasyOCR: Полное изображение
-  EasyOCR->>EasyOCR: Поиск областей<br/>с номерами
-  EasyOCR->>PaddleOCR: Области интереса<br/>(crops)
-  PaddleOCR->>PaddleOCR: Распознавание цифр
-  PaddleOCR->>System: Номера вагонов<br/>(~1 сек на кадр)
-```
+  participant EasyOCR as EasyOCR<br/>(detection)
+  participant PaddleOCR as PaddleOCR<br/>(recognition)
+  participant System as System
 
+  Camera->>Snapshot: Full HD snapshot
+  Snapshot->>EasyOCR: Full image
+  EasyOCR->>EasyOCR: Find areas<br/>with numbers
+  EasyOCR->>PaddleOCR: Areas of interest<br/>(crops)
+  PaddleOCR->>PaddleOCR: Recognise digits
+  PaddleOCR->>System: Wagon numbers<br/>(about 1 s per frame)
+```
