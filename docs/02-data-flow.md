@@ -1,96 +1,94 @@
-# Поток данных / жизненный цикл события
+# Data flow: lifecycle of an event
 
-## Типичный сценарий: оператор запускает позиционирование вагона
+## Typical scenario: an operator starts wagon positioning
 
-### 1. Инициация действия в UI
-- Оператор нажимает кнопку "Старт позиционирования" на странице `Process.razor`
-- Blazor компонент вызывает метод через `HttpClient` (с JWT токеном в заголовке)
-- Запрос отправляется на `POST /api/process/start-positioning`
+### 1. Action in the UI
+- The operator presses "Start positioning" on the `Process.razor` page.
+- The Blazor component calls the API through `HttpClient` with the JWT in the header.
+- The request goes to `POST /api/process/start-positioning`.
 
-### 2. Обработка в API контроллере
-- `ProcessController.StartPositioning()` принимает запрос
-- Проверка JWT токена через `[Authorize]` атрибут
-- Проверка роли (например, `TechnicianPolicy`)
-- Валидация входных данных (номер трека, номер вагона)
+### 2. Handling in the API controller
+- `ProcessController.StartPositioning()` receives the request.
+- The JWT is checked through the `[Authorize]` attribute.
+- The role is checked (for example `TechnicianPolicy`).
+- Input is validated (track number, wagon number).
 
-### 3. Выполнение бизнес-логики в сервисах
+### 3. Business logic in the services
 
-#### Для команд PLC:
-- `ProcessController` вызывает `PlcLogicEngine.ProcessIncomingData()` с текущим состоянием
-- `PlcLogicEngine` анализирует режим работы, маски мостов/вагонов, подтверждения
-- Формируется команда (`OutgoingCommand`) с номером трека и кодом команды (например, 100 для Track 1)
-- Команда отправляется через `PlcBus.WriteCommand()` → `ModbusProtocol.WriteRegister()`
-- Логируется причина команды и результат
+#### PLC commands
+- `ProcessController` calls `PlcLogicEngine.ProcessIncomingData()` with the current state.
+- `PlcLogicEngine` analyses the operating mode, bridge and wagon masks and acknowledgements.
+- A command (`OutgoingCommand`) is formed with the track number and a command code (for example 100 for Track 1).
+- The command is sent through `PlcBus.WriteCommand()` → `ModbusProtocol.WriteRegister()`.
+- The reason for the command and the result are logged.
 
-#### Для печати:
-- `PrinterController` вызывает `PrinterService.PrintLabel()`
-- Сервис загружает шаблон из `wwwroot/prn-templates/track{N}.prn`
-- Заменяет плейсхолдеры данными вагона
-- Отправляет данные на сетевой принтер через TCP/IP (порт 9100)
-- Логирует операцию в `PrinterLogs` через EF Core
+#### Printing
+- `PrinterController` calls `PrinterService.PrintLabel()`.
+- The service loads the template from `wwwroot/prn-templates/track{N}.prn`.
+- Placeholders are replaced with wagon data.
+- The data is sent to the network printer over TCP/IP (port 9100).
+- The operation is logged in `PrinterLogs` through EF Core.
 
-#### Для камер и распознавания номеров:
-- `CameraController` вызывает `SnapshotService.CaptureSnapshot()` для получения снимка
-- Сервис получает RTSP URL из `CameraSettings` (БД)
-- Использует OpenCvSharp для захвата кадра
-- Сохраняет снимок и возвращает URL для отображения в UI
-- Для распознавания номеров: `CameraController` вызывает `CameraStubService.RecognizeWagonNumbersAsync()`
-- В продакшене используется отдельный OCR модуль (EasyOCR + PaddleOCR пайплайн)
-- В showcase: `CameraStubService` выдаёт "0000000" для демонстрации архитектуры
+#### Cameras and number recognition
+- `CameraController` calls `SnapshotService.CaptureSnapshot()`.
+- The service reads the RTSP URL from `CameraSettings` (database) and grabs a frame with OpenCvSharp.
+- The snapshot is saved and its URL is returned to the UI.
+- For number recognition, `CameraController` calls `CameraStubService.RecognizeWagonNumbersAsync()`.
+- In the full system a separate OCR module (EasyOCR + PaddleOCR pipeline) does the recognition.
+- In this showcase `CameraStubService` returns "0000000" to illustrate the architecture.
 
-#### Для настроек:
-- `SettingsService` или `ModbusConfigurationService` сохраняют изменения через EF Core
-- Обновляется соответствующая таблица (`ModbusSettings`, `CameraSettings`, `Settings`)
+#### Settings
+- `SettingsService` or `ModbusConfigurationService` save changes through EF Core.
+- The matching table is updated (`ModbusSettings`, `CameraSettings`, `Settings`).
 
-#### Для интеграции с 1C:
-- `MySqlOneCService.GetWagonData()` выполняет параметризованный SQL запрос к MySQL
-- Читает данные из таблицы `wagon_data` (номер вагона, вес, статус)
-- Возвращает DTO для использования в UI
+#### 1C integration
+- `MySqlOneCService.GetWagonData()` runs a parameterised SQL query against MySQL.
+- It reads from the `wagon_data` table (wagon number, weight, status).
+- It returns a DTO for the UI.
 
-### 4. Сохранение данных
-- EF Core (`VagonDbContext`) сохраняет изменения в SQLite:
-  - `ButtonActions` — логи действий оператора
-  - `PrinterLogs` — логи печати
-  - `ModbusSettings`, `CameraSettings`, `Settings` — обновления настроек
-  - `ProcessedWagons` — информация об обработанных вагонах
-- Транзакции обеспечивают целостность данных
+### 4. Persistence
+EF Core (`VagonDbContext`) saves changes to SQLite:
+- `ButtonActions`: operator action log
+- `PrinterLogs`: print log
+- `ModbusSettings`, `CameraSettings`, `Settings`: settings updates
+- `ProcessedWagons`: processed wagons
 
-### 5. Обновление UI
-- Blazor Server SignalR circuit получает обновления состояния
-- Компоненты автоматически перерисовываются при изменении данных
-- `CultureSyncService` синхронизирует культуру между компонентами
-- Оператор видит обновлённый статус трека, логи печати, снимки камер
+Transactions keep the data consistent.
 
-### 6. Фоновые процессы
+### 5. UI update
+- The Blazor Server SignalR circuit receives the state update.
+- Components re-render automatically when data changes.
+- `CultureSyncService` keeps the culture in sync between components.
+- The operator sees the updated track status, print log and camera snapshots.
 
-#### Опрос PLC:
-- `PlcBusInitializationService` инициализирует соединение с PLC при старте приложения
-- `SamplerService` периодически (каждые 5 секунд) опрашивает регистры Modbus:
-  - Читает режим работы, команды, маски мостов/вагонов
-  - Вызывает `PlcLogicEngine.ProcessIncomingData()` с полученными данными
-  - `PlcLogicEngine` анализирует состояние и может автоматически отправить команду
-  - Результаты логируются и обновляют состояние в `ProcessStateService`
+### 6. Background processes
 
-#### Мониторинг соединений:
-- `OneCConnectionMonitorService` периодически проверяет доступность MySQL БД 1C
-- Логирует статус соединения для диагностики
+#### PLC polling
+- `PlcBusInitializationService` initialises the PLC connection at application start.
+- `SamplerService` polls the Modbus registers periodically (every 5 seconds):
+  - reads the operating mode, commands and bridge/wagon masks
+  - calls `PlcLogicEngine.ProcessIncomingData()` with the result
+  - `PlcLogicEngine` analyses the state and may send a command on its own
+  - results are logged and update the state in `ProcessStateService`
 
-## Обратный поток: данные с PLC → UI
+#### Connection monitoring
+- `OneCConnectionMonitorService` periodically checks that the 1C MySQL database is reachable and logs the status.
 
-1. **PLC отправляет данные** через Modbus (регистры обновляются)
-2. **`SamplerService` опрашивает** регистры Modbus каждые N секунд
-3. **`PlcBus.ReadRegisters()`** читает текущее состояние
-4. **`PlcLogicEngine.ProcessIncomingData()`** обрабатывает данные:
-   - Определяет режим работы (Waiting, Positioning, Sampling)
-   - Проверяет фронты битов (окончание позиционирования, кнопка печати)
-   - Может автоматически отправить команду (например, переход в режим Sampling)
-5. **`ProcessStateService`** обновляет внутреннее состояние
-6. **UI обновляется** через Blazor Server SignalR
+## Reverse flow: PLC → UI
 
-## Особенности потока данных
+1. **The PLC updates** its Modbus registers.
+2. **`SamplerService` polls** the registers every N seconds.
+3. **`PlcBus.ReadRegisters()`** reads the current state.
+4. **`PlcLogicEngine.ProcessIncomingData()`** processes it:
+   - determines the operating mode (Waiting, Positioning, Sampling)
+   - detects bit edges (end of positioning, print button)
+   - may send a command automatically (for example a switch to Sampling)
+5. **`ProcessStateService`** updates the internal state.
+6. **The UI updates** through Blazor Server SignalR.
 
-- **Идемпотентность**: команды к PLC формируются на основе текущего состояния, `PlcLogicEngine` возвращает `null`, если действий не нужно
-- **Логирование**: все операции логируются для аудита и отладки
-- **Обработка ошибок**: try/catch блоки на всех уровнях, ошибки логируются и возвращаются в UI
-- **Асинхронность**: большинство операций асинхронные (async/await) для неблокирующей работы
+## Notes
 
+- **Idempotency**: PLC commands are formed from the current state; `PlcLogicEngine` returns `null` when no action is needed.
+- **Logging**: all operations are logged for audit and debugging.
+- **Error handling**: try/catch at every level; errors are logged and returned to the UI.
+- **Async**: most operations use async/await so that nothing blocks.
